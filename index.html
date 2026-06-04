@@ -1,39 +1,38 @@
-
- 
-
-     
-      
-    
-    
-        :根目录 {
-            --背景: #1a1a2e;
-            --面板背景: #16213e;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影视选题辩论室</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #16213e;
             --chat-bg: #0f3460;
-            --文本: #e0e0e0;
-            -- accent: #e94560;
-            -- accent2: #0f3460;
-            --消息-人工智能: #1a1a3e;
+            --text: #e0e0e0;
+            --accent: #e94560;
+            --accent2: #0f3460;
+            --msg-ai: #1a1a3e;
             --msg-user: #0f4c75;
-            --边框: #2a2a4a;
+            --border: #2a2a4a;
         }
-        *  {
-            边距：0;
-            
-            盒模型：边框盒;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        身体 {
-            字体族：'PingFang SC'，'Microsoft YaHei'，无衬线;
-            背景：变量（--背景）;
-            颜色：变量（--文本）;
-            高度：100vh;
-            显示：伸缩;
-            溢出：隐藏;
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
         }
-        /* 左侧面板 */
-        .面板 {
-            宽度：25%;
-            最小宽度：260像素;
-            背景：变量（--面板背景）；
+        .panel {
+            width: 25%;
+            min-width: 260px;
+            background: var(--panel-bg);
             padding: 20px 16px;
             display: flex;
             flex-direction: column;
@@ -113,15 +112,9 @@
             color: #ff6b6b;
         }
         @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-        /* 右侧 */
         .main {
             flex: 1;
             display: flex;
@@ -172,14 +165,8 @@
             animation: fadeInUp 0.3s ease-out;
         }
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .avatar {
             width: 36px;
@@ -277,7 +264,6 @@
 </head>
 <body>
 
-    <!-- 左侧配置面板 -->
     <div class="panel">
         <h2>⚙️ 辩论室配置</h2>
         <label>DeepSeek API Key</label>
@@ -296,7 +282,6 @@
         <div class="status idle" id="status-indicator">● 空闲</div>
     </div>
 
-    <!-- 右侧主区域 -->
     <div class="main">
         <div class="input-area">
             <textarea id="material-input" placeholder="在此粘贴豆瓣/B站/知乎资料..."></textarea>
@@ -314,7 +299,6 @@
     </div>
 
     <script>
-        // ============ 全局状态 ============
         let debateRunning = false;
         let stopFlag = false;
         let chatHistory = [];
@@ -367,7 +351,6 @@
             zhipu: '你是"专业抬杠运动员"。你的天职是质疑一切主流观点。你必须为少数派发声，但抬杠必须有证据，不能为了反对而反对。'
         };
 
-        // ============ 页面加载 ============
         window.onload = function() {
             loadKeys();
             showWelcome();
@@ -376,12 +359,10 @@
         function showWelcome() {
             if (chatHistory.length === 0) {
                 const area = document.getElementById('chat-area');
-                area.innerHTML =
-                    '<div style="text-align:center;color:#666;margin-top:60px;font-size:14px;">📺 影视选题辩论室<br><span style="font-size:12px;">粘贴资料 → 点击开始辩论 → 围观AI脑暴</span></div>';
+                area.innerHTML = '<div style="text-align:center;color:#666;margin-top:60px;font-size:14px;">📺 影视选题辩论室<br><span style="font-size:12px;">粘贴资料 → 点击开始辩论 → 围观AI脑暴</span></div>';
             }
         }
 
-        // ============ API Key 管理 ============
         function getKeyInputId(model) {
             return 'key-' + model;
         }
@@ -407,7 +388,6 @@
             return localStorage.getItem('debate_key_' + model) || '';
         }
 
-        // ============ UI 工具函数 ============
         function setStatus(state) {
             const el = document.getElementById('status-indicator');
             el.className = 'status ' + state;
@@ -457,7 +437,6 @@
             area.appendChild(row);
             area.scrollTop = area.scrollHeight;
 
-            // 存入对话历史
             if (!isError) {
                 const msgObj = { role, model, content, time: new Date().toISOString() };
                 chatHistory.push(msgObj);
@@ -474,7 +453,6 @@
             showWelcome();
         }
 
-        // ============ 用户插话 ============
         function sendIntervene() {
             const input = document.getElementById('user-intervene-input');
             const text = input.value.trim();
@@ -483,7 +461,6 @@
             input.value = '';
         }
 
-        // ============ 停止辩论 ============
         function stopDebate() {
             stopFlag = true;
             debateRunning = false;
@@ -491,7 +468,6 @@
             addMessage('system', null, '⏹️ 辩论已停止', false);
         }
 
-        // ============ API 调用（核心） ============
         async function callModelAPI(model, messages) {
             const apiKey = getKey(model);
             if (!apiKey) {
@@ -545,7 +521,6 @@
             }
         }
 
-        // ============ 辩论主循环 ============
         async function startDebate() {
             const material = document.getElementById('material-input').value.trim();
             if (!material) {
@@ -561,20 +536,14 @@
             debateRunning = true;
             setStatus('running');
 
-            // 添加资料消息
-            addUserMessage('📋 以下为本次辩论资料：\n' + (material.length > 500 ? material.substring(0, 500) +
-                '...' : material));
+            addUserMessage('📋 以下为本次辩论资料：\n' + (material.length > 500 ? material.substring(0, 500) + '...' : material));
 
-            // 构建初始消息
-            const userMaterialMsg = '以下是一份影视作品的观众评论和讨论资料，请仔细阅读：\n\n' + material +
-                '\n\n请基于以上资料，结合你的人设，提出一个爆款选题方向。';
+            const userMaterialMsg = '以下是一份影视作品的观众评论和讨论资料，请仔细阅读：\n\n' + material + '\n\n请基于以上资料，结合你的人设，提出一个爆款选题方向。';
 
-            // 逐模型调用第一轮
             for (const model of MODEL_LIST) {
                 if (stopFlag) break;
                 const persona = PERSONAS[model] || '';
-                const systemPrompt = SYSTEM_PROMPT.replace('## 你的角色人设\n[此处在实际调用时会被替换为各模型对应的人设]',
-                    '## 你的角色人设\n' + persona);
+                const systemPrompt = SYSTEM_PROMPT.replace('[此处在实际调用时会被替换为各模型对应的人设]', persona);
 
                 const msgs = [
                     { role: 'system', content: systemPrompt },
@@ -587,45 +556,38 @@
                 } else if (result.content) {
                     addMessage('ai', model, result.content, false);
                 }
-                // 短暂间隔，避免请求过快
                 await sleep(800);
             }
 
-            // 辩论循环：多轮进行
             let round = 1;
             const MAX_ROUNDS = 20;
             while (!stopFlag && round < MAX_ROUNDS) {
                 round++;
-                await sleep(2000); // 每轮间隔2秒
+                await sleep(2000);
 
                 for (const model of MODEL_LIST) {
                     if (stopFlag) break;
                     const persona = PERSONAS[model] || '';
-                    const systemPrompt = SYSTEM_PROMPT.replace(
-                        '## 你的角色人设\n[此处在实际调用时会被替换为各模型对应的人设]',
-                        '## 你的角色人设\n' + persona);
+                    const systemPrompt = SYSTEM_PROMPT.replace('[此处在实际调用时会被替换为各模型对应的人设]', persona);
 
-                    // 构建消息：system + 完整对话历史
                     const msgs = [{ role: 'system', content: systemPrompt }];
-                    // 将对话历史转换为API消息格式
-                    for (const h of chatHistory) {
-                        if (h.role === 'user') {
-                            msgs.push({ role: 'user', content: h.content });
-                        } else if (h.role === 'ai') {
-                            const label = MODEL_NAMES[h.model] || h.model;
-                            msgs.push({ role: 'assistant', content: '[' + label + ']: ' + h.content });
+                    对于 (常量 h 属于 聊天历史记录) {
+                        如果 (h.角色 === '用户') {
+                            msgs. push( {role: 'user', content: h.content} );  
+                        } 否则 如果 (h.角色 === 'ai') {
+                            常量 标签 = 模型名称[h.模型] || h.模型;
+                            msgs. push( {role: 'assistant', content: '[ + label + ]: ' + h. content} )  
                         }
                     }
-                    // 追加本轮指令
-                    msgs.push({
-                        role: 'user',
-                        content: '（这是第' + round + '轮辩论。请继续发言：点评、质疑或补充其他成员的观点。如果你没有新的角度，可以从另一个侧面深化已有讨论。禁止简单同意。）'
+                    消息.推送({
+                        角色：'用户'，
+                        内容：'（这是第' + 轮 + '辩论。请继续发言：点评、质疑或补充其他成员的观点。如果你没有新的角度，可以从另一个侧面深化已有讨论。禁止简单同意。）'
                     });
 
-                    const result = await callModelAPI(model, msgs);
-                    if (result.error) {
-                        addMessage('ai', model, '❌ ' + result.error, true);
-                    } else if (result.content) {
+                    常量 结果 = 等待 调用模型API(模型, 消息);
+                    如果 (结果.错误) {
+                        addMessage('ai', model, '❌' + result.error, true);
+                    } 否则 如果 (结果.内容) {
                         addMessage('ai', model, result.content, false);
                     }
                     await sleep(800);
@@ -641,5 +603,5 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
     </script>
-</body>
+</身体>
 </html>
