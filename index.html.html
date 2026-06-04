@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影视选题辩论室</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #16213e;
+            --chat-bg: #0f3460;
+            --text: #e0e0e0;
+            --accent: #e94560;
+            --accent2: #0f3460;
+            --msg-ai: #1a1a3e;
+            --msg-user: #0f4c75;
+            --border: #2a2a4a;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        /* 左侧面板 */
+        .panel {
+            width: 25%;
+            min-width: 260px;
+            background: var(--panel-bg);
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+        .panel h2 {
+            font-size: 18px;
+            text-align: center;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+        .panel label {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: -8px;
+        }
+        .panel input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+        .panel input:focus {
+            border-color: var(--accent);
+        }
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-save {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-save:hover {
+            opacity: 0.85;
+        }
+        .btn-stop {
+            background: #ff6b6b;
+            color: #fff;
+        }
+        .btn-stop:hover {
+            opacity: 0.85;
+        }
+        .btn-clear {
+            background: #444;
+            color: #fff;
+        }
+        .btn-clear:hover {
+            opacity: 0.85;
+        }
+        .status {
+            font-size: 12px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            background: var(--bg);
+        }
+        .status.idle {
+            color: #aaa;
+        }
+        .status.running {
+            color: #4caf50;
+            animation: pulse 1.5s infinite;
+        }
+        .status.stopped {
+            color: #ff6b6b;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        /* 右侧 */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--chat-bg);
+        }
+        .input-area {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            background: var(--panel-bg);
+        }
+        .input-area textarea {
+            flex: 1;
+            height: 70px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+        .input-area textarea:focus {
+            border-color: var(--accent);
+        }
+        .btn-debate {
+            background: var(--accent);
+            color: #fff;
+            height: 40px;
+            white-space: nowrap;
+        }
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .msg-row {
+            display: flex;
+            gap: 10px;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .msg-body {
+            flex: 1;
+            background: var(--msg-ai);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .msg-body.user {
+            background: var(--msg-user);
+        }
+        .msg-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+        .msg-meta .name {
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .msg-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .msg-error {
+            background: #4a1a1a !important;
+            color: #ff6b6b;
+            font-size: 12px;
+        }
+        .user-intervene {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        .user-intervene input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+        .user-intervene input:focus {
+            border-color: var(--accent);
+        }
+        .btn-send {
+            background: var(--accent);
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .panel {
+                width: 100%;
+                min-width: auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 10px;
+            }
+            .panel h2 {
+                width: 100%;
+                font-size: 16px;
+            }
+            .panel label {
+                display: none;
+            }
+            .panel input {
+                flex: 1;
+                min-width: 100px;
+            }
+            .main {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧配置面板 -->
+    <div class="panel">
+        <h2>⚙️ 辩论室配置</h2>
+        <label>DeepSeek API Key</label>
+        <input type="password" id="key-deepseek" placeholder="sk-...">
+        <label>豆包 (火山引擎) API Key</label>
+        <input type="password" id="key-doubao" placeholder="...">
+        <label>Kimi (月之暗面) API Key</label>
+        <input type="password" id="key-kimi" placeholder="sk-...">
+        <label>通义千问 (百炼) API Key</label>
+        <input type="password" id="key-qwen" placeholder="sk-...">
+        <label>智谱清言 API Key</label>
+        <input type="password" id="key-zhipu" placeholder="...">
+        <button class="btn btn-save" onclick="saveKeys()">💾 保存配置</button>
+        <button class="btn btn-stop" onclick="stopDebate()">⏹️ 停止辩论</button>
+        <button class="btn btn-clear" onclick="clearChat()">🗑️ 清空对话</button>
+        <div class="status idle" id="status-indicator">● 空闲</div>
+    </div>
+
+    <!-- 右侧主区域 -->
+    <div class="main">
+        <div class="input-area">
+            <textarea id="material-input" placeholder="在此粘贴豆瓣/B站/知乎资料..."></textarea>
+            <button class="btn btn-debate" onclick="startDebate()">🚀 开始辩论</button>
+        </div>
+        <div class="chat-area" id="chat-area">
+            <div style="text-align:center;color:#666;margin-top:60px;font-size:14px;">
+                📺 影视选题辩论室<br><span style="font-size:12px;">粘贴资料 → 点击开始辩论 → 围观AI脑暴</span>
+            </div>
+        </div>
+        <div class="user-intervene" style="padding:10px 16px;border-top:1px solid var(--border);background:var(--panel-bg);">
+            <input type="text" id="user-intervene-input" placeholder="随时插话引导辩论方向..." onkeydown="if(event.key==='Enter')sendIntervene()">
+            <button class="btn btn-send" onclick="sendIntervene()">发送</button>
+        </div>
+    </div>
+
+    <script>
+        // ============ 全局状态 ============
+        let debateRunning = false;
+        let stopFlag = false;
+        let chatHistory = [];
+        const MODEL_LIST = ['deepseek', 'doubao', 'kimi', 'qwen', 'zhipu'];
+
+        const MODEL_NAMES = {
+            deepseek: 'DeepSeek · 逻辑纠察',
+            doubao: '豆包 · 流量雷达',
+            kimi: 'Kimi · 人文显微镜',
+            qwen: '通义千问 · 人间嘴替',
+            zhipu: '智谱 · 专业抬杠'
+        };
+
+        const MODEL_COLORS = {
+            deepseek: '#4caf50',
+            doubao: '#2196f3',
+            kimi: '#ff9800',
+            qwen: '#9c27b0',
+            zhipu: '#f44336'
+        };
+
+        const SYSTEM_PROMPT = `你是一个影视解说选题策划智囊团的成员。你参与一场多人的选题辩论会，你和另外4位AI角色正在一个群聊中讨论。
+
+        ## 你的角色人设
+        [此处在实际调用时会被替换为各模型对应的人设]
+
+        ## 核心红线（绝对不能违反）
+        1. 绝对不能为了反常识而反常识，所有观点都必须能自圆其说，有足够的资料或影视情节作为支撑。
+        2. 绝对不能涉及任何敏感话题，不能把影视人物和当代政治人物进行类比。
+        3. 任何质疑或反驳，必须附带具体的证据引用（来自用户提供的资料或影视情节）。无证据的纯抬杠无效。
+
+        ## 辩论规则
+        1. 第一轮：基于用户提供的资料，结合你的人设，各自提出一个爆款选题方向。选题必须是一个可以用"一句话钩子"表达的明确观点，不是泛泛的主题。
+        2. 从第二轮开始：你必须仔细阅读群内所有其他成员的发言，并对他们的观点进行点评、质疑、反驳或补充。
+        3. 禁止简单同意。如果你同意某人的观点，必须提供全新的论据支撑，否则视为无效发言。
+        4. 禁止跑题。始终围绕用户提供的影视资料和选题展开。
+        5. 如果没有收到用户的停止指令，辩论必须持续进行。每轮发言后，你应当以新的角度继续推进讨论。
+
+        ## 输出要求
+        - 你的每条发言应当简洁有力，控制在200字以内（但论证充分时允许超过）。
+        - 语言风格要符合你的人设，保持辩论的张力。
+        - 如果你是第一轮发言，输出格式为：【选题方向】+ 你的选题钩子 + 简短理由。
+        - 如果你不是第一轮发言，先表明你的态度（同意/反对/补充），再给出你的论据。`;
+
+        const PERSONAS = {
+            deepseek: '你是"逻辑纠察队队长"。你坚信影视作品的根基是叙事逻辑和人物行为动机的合理性。你对剧情漏洞、人设崩塌有生理性厌恶。你的选题永远指向"这个故事本身说得圆吗"。',
+            doubao: '你是"流量雷达探测器"。你只看数据，不在乎艺术高度。你的大脑就是抖音算法的模拟器，对社会情绪、大众痛点、阶层议题极度敏感。你的选题永远指向"这个能不能火"。',
+            kimi: '你是"人文显微镜操作员"。你专注长尾深度内容，武器是考据、隐喻解读、镜头语言分析、历史/文化背景钩沉。你的选题让人看完觉得"涨知识了"。',
+            qwen: '你是"人间清醒嘴替"。你擅长从角色关系、情感困境、生活细节中提炼出能让观众瞬间共鸣的人生真相。你相信观众点赞的动机是"这说的不就是我吗"。',
+            zhipu: '你是"专业抬杠运动员"。你的天职是质疑一切主流观点。你必须为少数派发声，但抬杠必须有证据，不能为了反对而反对。'
+        };
+
+        // ============ 页面加载 ============
+        window.onload = function() {
+            loadKeys();
+            showWelcome();
+        };
+
+        function showWelcome() {
+            if (chatHistory.length === 0) {
+                const area = document.getElementById('chat-area');
+                area.innerHTML =
+                    '<div style="text-align:center;color:#666;margin-top:60px;font-size:14px;">📺 影视选题辩论室<br><span style="font-size:12px;">粘贴资料 → 点击开始辩论 → 围观AI脑暴</span></div>';
+            }
+        }
+
+        // ============ API Key 管理 ============
+        function getKeyInputId(model) {
+            return 'key-' + model;
+        }
+
+        function saveKeys() {
+            MODEL_LIST.forEach(model => {
+                const val = document.getElementById(getKeyInputId(model)).value.trim();
+                if (val) localStorage.setItem('debate_key_' + model, val);
+            });
+            alert('✅ API Key 已保存到本地浏览器');
+        }
+
+        function loadKeys() {
+            MODEL_LIST.forEach(model => {
+                const saved = localStorage.getItem('debate_key_' + model);
+                if (saved) document.getElementById(getKeyInputId(model)).value = saved;
+            });
+        }
+
+        function getKey(model) {
+            const fromInput = document.getElementById(getKeyInputId(model)).value.trim();
+            if (fromInput) return fromInput;
+            return localStorage.getItem('debate_key_' + model) || '';
+        }
+
+        // ============ UI 工具函数 ============
+        function setStatus(state) {
+            const el = document.getElementById('status-indicator');
+            el.className = 'status ' + state;
+            if (state === 'idle') el.textContent = '● 空闲';
+            if (state === 'running') el.textContent = '● 辩论中...';
+            if (state === 'stopped') el.textContent = '● 已停止';
+        }
+
+        function addMessage(role, model, content, isError) {
+            const area = document.getElementById('chat-area');
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            if (role === 'user') {
+                avatar.style.background = '#e94560';
+                avatar.textContent = '我';
+            } else {
+                avatar.style.background = MODEL_COLORS[model] || '#666';
+                avatar.textContent = MODEL_NAMES[model] ? MODEL_NAMES[model].charAt(0) : '?';
+            }
+
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            if (role === 'user') body.classList.add('user');
+            if (isError) body.classList.add('msg-error');
+
+            const meta = document.createElement('div');
+            meta.className = 'msg-meta';
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'name';
+            nameSpan.textContent = role === 'user' ? '我' : (MODEL_NAMES[model] || model);
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = new Date().toLocaleTimeString();
+            meta.appendChild(nameSpan);
+            meta.appendChild(timeSpan);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'msg-content';
+            contentDiv.textContent = content;
+
+            body.appendChild(meta);
+            body.appendChild(contentDiv);
+            row.appendChild(avatar);
+            row.appendChild(body);
+            area.appendChild(row);
+            area.scrollTop = area.scrollHeight;
+
+            // 存入对话历史
+            if (!isError) {
+                const msgObj = { role, model, content, time: new Date().toISOString() };
+                chatHistory.push(msgObj);
+            }
+        }
+
+        function addUserMessage(content) {
+            addMessage('user', null, content, false);
+        }
+
+        function clearChat() {
+            chatHistory = [];
+            document.getElementById('chat-area').innerHTML = '';
+            showWelcome();
+        }
+
+        // ============ 用户插话 ============
+        function sendIntervene() {
+            const input = document.getElementById('user-intervene-input');
+            const text = input.value.trim();
+            if (!text) return;
+            addUserMessage('【插话】' + text);
+            input.value = '';
+        }
+
+        // ============ 停止辩论 ============
+        function stopDebate() {
+            stopFlag = true;
+            debateRunning = false;
+            setStatus('stopped');
+            addMessage('system', null, '⏹️ 辩论已停止', false);
+        }
+
+        // ============ API 调用（核心） ============
+        async function callModelAPI(model, messages) {
+            const apiKey = getKey(model);
+            if (!apiKey) {
+                return { error: model + ' 未配置API Key' };
+            }
+
+            const configs = {
+                deepseek: {
+                    url: 'https://api.deepseek.com/v1/chat/completions',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                    body: { model: 'deepseek-chat', messages, stream: false, max_tokens: 600, temperature: 0.85 }
+                },
+                doubao: {
+                    url: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                    body: { model: 'doubao-pro-32k', messages, stream: false, max_tokens: 600, temperature: 0.85 }
+                },
+                kimi: {
+                    url: 'https://api.moonshot.cn/v1/chat/completions',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                    body: { model: 'moonshot-v1-8k', messages, stream: false, max_tokens: 600, temperature: 0.85 }
+                },
+                qwen: {
+                    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                    body: { model: 'qwen-turbo', messages, stream: false, max_tokens: 600, temperature: 0.85 }
+                },
+                zhipu: {
+                    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+                    body: { model: 'glm-4-flash', messages, stream: false, max_tokens: 600, temperature: 0.85 }
+                }
+            };
+
+            const cfg = configs[model];
+            if (!cfg) return { error: '未知模型: ' + model };
+
+            try {
+                const resp = await fetch(cfg.url, {
+                    method: 'POST',
+                    headers: cfg.headers,
+                    body: JSON.stringify(cfg.body)
+                });
+                const data = await resp.json();
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    return { content: data.choices[0].message.content.trim() };
+                }
+                return { error: model + ' 返回异常: ' + JSON.stringify(data).substring(0, 200) };
+            } catch (e) {
+                return { error: model + ' 调用失败: ' + e.message };
+            }
+        }
+
+        // ============ 辩论主循环 ============
+        async function startDebate() {
+            const material = document.getElementById('material-input').value.trim();
+            if (!material) {
+                alert('请先粘贴影视资料');
+                return;
+            }
+            if (debateRunning) {
+                alert('辩论正在进行中，请先停止');
+                return;
+            }
+
+            stopFlag = false;
+            debateRunning = true;
+            setStatus('running');
+
+            // 添加资料消息
+            addUserMessage('📋 以下为本次辩论资料：\n' + (material.length > 500 ? material.substring(0, 500) +
+                '...' : material));
+
+            // 构建初始消息
+            const userMaterialMsg = '以下是一份影视作品的观众评论和讨论资料，请仔细阅读：\n\n' + material +
+                '\n\n请基于以上资料，结合你的人设，提出一个爆款选题方向。';
+
+            // 逐模型调用第一轮
+            for (const model of MODEL_LIST) {
+                if (stopFlag) break;
+                const persona = PERSONAS[model] || '';
+                const systemPrompt = SYSTEM_PROMPT.replace('## 你的角色人设\n[此处在实际调用时会被替换为各模型对应的人设]',
+                    '## 你的角色人设\n' + persona);
+
+                const msgs = [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMaterialMsg }
+                ];
+
+                const result = await callModelAPI(model, msgs);
+                if (result.error) {
+                    addMessage('ai', model, '❌ ' + result.error, true);
+                } else if (result.content) {
+                    addMessage('ai', model, result.content, false);
+                }
+                // 短暂间隔，避免请求过快
+                await sleep(800);
+            }
+
+            // 辩论循环：多轮进行
+            let round = 1;
+            const MAX_ROUNDS = 20;
+            while (!stopFlag && round < MAX_ROUNDS) {
+                round++;
+                await sleep(2000); // 每轮间隔2秒
+
+                for (const model of MODEL_LIST) {
+                    if (stopFlag) break;
+                    const persona = PERSONAS[model] || '';
+                    const systemPrompt = SYSTEM_PROMPT.replace(
+                        '## 你的角色人设\n[此处在实际调用时会被替换为各模型对应的人设]',
+                        '## 你的角色人设\n' + persona);
+
+                    // 构建消息：system + 完整对话历史
+                    const msgs = [{ role: 'system', content: systemPrompt }];
+                    // 将对话历史转换为API消息格式
+                    for (const h of chatHistory) {
+                        if (h.role === 'user') {
+                            msgs.push({ role: 'user', content: h.content });
+                        } else if (h.role === 'ai') {
+                            const label = MODEL_NAMES[h.model] || h.model;
+                            msgs.push({ role: 'assistant', content: '[' + label + ']: ' + h.content });
+                        }
+                    }
+                    // 追加本轮指令
+                    msgs.push({
+                        role: 'user',
+                        content: '（这是第' + round + '轮辩论。请继续发言：点评、质疑或补充其他成员的观点。如果你没有新的角度，可以从另一个侧面深化已有讨论。禁止简单同意。）'
+                    });
+
+                    const result = await callModelAPI(model, msgs);
+                    if (result.error) {
+                        addMessage('ai', model, '❌ ' + result.error, true);
+                    } else if (result.content) {
+                        addMessage('ai', model, result.content, false);
+                    }
+                    await sleep(800);
+                }
+            }
+
+            debateRunning = false;
+            if (!stopFlag) setStatus('idle');
+            addMessage('system', null, '🏁 本轮辩论结束。可继续粘贴新资料或发送指令引导下一轮。', false);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
